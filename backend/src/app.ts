@@ -2,10 +2,17 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import { prisma } from './config/prisma.js';
+import { env } from './config/env.js';
 import organizationRoutes from './modules/organizations/organization.routes.js';
 import { errorMiddleware } from './common/middleware/error.middleware.js';
+import { requestLogger } from './common/middleware/request-logger.middleware.js';
+import { successResponse, errorResponse } from './common/utils/api-response.js';
+import { AppError } from './common/errors/app-error.js';
+import { openApiSpec } from './docs/openapi.js';
 
 const app = express();
+
+app.use(requestLogger);
 
 // Security middleware
 app.use(helmet());
@@ -13,7 +20,7 @@ app.use(helmet());
 // CORS configuration
 app.use(
     cors({
-        origin: process.env.CLIENT_URL ?? 'http://localhost:4200',
+        origin: env.CLIENT_URL,
         credentials: true,
     }),
 );
@@ -27,24 +34,33 @@ app.get('/api/health', async (_req, res) => {
     try {
         await prisma.$queryRaw`SELECT 1`;
 
-        res.status(200).json({
-            success: true,
-            message: 'BPAS API is running.',
-            database: 'connected',
-            timestamp: new Date().toISOString(),
-        });
+        res.status(200).json(
+            successResponse('BPAS API is running.', {
+                database: 'connected',
+                timestamp: new Date().toISOString(),
+            }),
+        );
     } catch {
-        res.status(503).json({
-            success: false,
-            message: 'BPAS API is running, but database is unavailable.',
-            database: 'disconnected',
-            timestamp: new Date().toISOString(),
-        });
+        res.status(503).json(
+            errorResponse('BPAS API is running, but database is unavailable.', {
+                database: 'disconnected',
+                timestamp: new Date().toISOString(),
+            }),
+        );
     }
+});
+
+app.get('/api/docs/openapi.json', (_req, res) => {
+    res.status(200).json(openApiSpec);
 });
 
 // Feature routes
 app.use('/api/organizations', organizationRoutes);
+
+// Standardized response for unknown routes
+app.use((_req, _res, next) => {
+    next(new AppError(404, 'Route not found.'));
+});
 
 // Error handler - always last
 app.use(errorMiddleware);

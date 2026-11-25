@@ -35,3 +35,11 @@ A web-based business process automation platform powered by AI agents.
 - ai-service/
 - automation/
 - docs/
+
+## Backend API
+
+The backend validates its environment configuration at startup. The OpenAPI 3
+specification is available at `http://localhost:5000/api/docs/openapi.json`
+when the backend is running and can be imported into Swagger UI or another
+OpenAPI-compatible tool. The organization list endpoint accepts `page` and
+`limit` query parameters (`limit` is capped at 100).

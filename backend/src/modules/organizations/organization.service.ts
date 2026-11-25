@@ -2,6 +2,10 @@ import { AppError } from '../../common/errors/app-error.js';
 import { CreateOrganizationDto } from './dto/create-organization.dto.js';
 import { UpdateOrganizationDto } from './dto/update-organization.dto.js';
 import { OrganizationRepository } from './organization.repository.js';
+import {
+    createPaginationMetadata,
+    type PaginationParams,
+} from '../../common/utils/pagination.js';
 
 function hasPrismaErrorCode(error: unknown, code: string): boolean {
     return (
@@ -17,8 +21,20 @@ export class OrganizationService {
         private readonly organizationRepository: OrganizationRepository,
     ) {}
 
-    async getAll() {
-        return this.organizationRepository.findAll();
+    async getAll(pagination: PaginationParams) {
+        const [items, total] = await Promise.all([
+            this.organizationRepository.findAll(pagination),
+            this.organizationRepository.count(),
+        ]);
+
+        return {
+            items,
+            pagination: createPaginationMetadata(
+                pagination.page,
+                pagination.limit,
+                total,
+            ),
+        };
     }
 
     async getById(id: string) {

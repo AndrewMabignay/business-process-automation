@@ -1,12 +1,19 @@
 import { prisma } from '../../config/prisma.js';
+import type { PaginationParams } from '../../common/utils/pagination.js';
 
 export class OrganizationRepository {
-    async findAll() {
+    async findAll({ skip, limit }: PaginationParams) {
         return prisma.organization.findMany({
+            skip,
+            take: limit,
             orderBy: {
                 createdAt: 'desc',
             },
         });
+    }
+
+    async count() {
+        return prisma.organization.count();
     }
 
     async findById(id: string) {

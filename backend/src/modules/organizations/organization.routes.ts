@@ -1,5 +1,8 @@
 import { Router } from 'express';
 import { OrganizationController } from './organization.controller.js';
+import { validateBody } from '../../common/middleware/validate.middleware.js';
+import { createOrganizationSchema } from './dto/create-organization.dto.js';
+import { updateOrganizationSchema } from './dto/update-organization.dto.js';
 
 const router = Router();
 
@@ -10,10 +13,18 @@ router.get('/', OrganizationController.getAll);
 router.get('/:id', OrganizationController.getById);
 
 // POST /api/organizations
-router.post('/', OrganizationController.create);
+router.post(
+    '/',
+    validateBody(createOrganizationSchema),
+    OrganizationController.create,
+);
 
 // PATCH /api/organizations/:id
-router.patch('/:id', OrganizationController.update);
+router.patch(
+    '/:id',
+    validateBody(updateOrganizationSchema),
+    OrganizationController.update,
+);
 
 // DELETE /api/organizations/:id
 router.delete('/:id', OrganizationController.delete);
