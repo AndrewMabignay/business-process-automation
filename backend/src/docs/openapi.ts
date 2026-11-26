@@ -143,7 +143,9 @@ export const openApiSpec = {
         },
         '/organizations': {
             get: {
-                summary: 'List organizations',
+                summary:
+                    'List active organizations where the user has membership and read permission',
+                security: [{ bearerAuth: [] }],
                 parameters: [
                     {
                         in: 'query',
@@ -163,7 +165,8 @@ export const openApiSpec = {
                 ],
                 responses: {
                     '200': {
-                        description: 'Paginated organizations.',
+                        description:
+                            'Paginated organizations visible to the authenticated user.',
                         content: {
                             'application/json': {
                                 schema: {
@@ -209,10 +212,12 @@ export const openApiSpec = {
                         },
                     },
                     '400': { description: 'Invalid pagination parameters.' },
+                    '401': { description: 'Authentication required.' },
                 },
             },
             post: {
-                summary: 'Create an organization',
+                summary: 'Create an organization and become its initial owner',
+                security: [{ bearerAuth: [] }],
                 requestBody: {
                     required: true,
                     content: {
@@ -241,10 +246,12 @@ export const openApiSpec = {
                     '201': { description: 'Organization created.' },
                     '400': { description: 'Invalid request body.' },
                     '409': { description: 'Organization slug already exists.' },
+                    '401': { description: 'Authentication required.' },
                 },
             },
         },
         '/organizations/{id}': {
+            security: [{ bearerAuth: [] }],
             parameters: [
                 {
                     in: 'path',
@@ -254,14 +261,21 @@ export const openApiSpec = {
                 },
             ],
             get: {
-                summary: 'Get an organization',
+                summary:
+                    'Get an organization with active membership and read permission',
                 responses: {
                     '200': { description: 'Organization details.' },
-                    '404': { description: 'Organization not found.' },
+                    '400': { description: 'Invalid organization ID.' },
+                    '401': { description: 'Authentication required.' },
+                    '403': {
+                        description:
+                            'Active membership or organization read permission is required.',
+                    },
                 },
             },
             patch: {
-                summary: 'Update an organization',
+                summary:
+                    'Update an organization with active membership and update permission',
                 requestBody: {
                     required: true,
                     content: {
@@ -296,16 +310,27 @@ export const openApiSpec = {
                 responses: {
                     '200': { description: 'Organization updated.' },
                     '400': { description: 'Invalid request body.' },
-                    '404': { description: 'Organization not found.' },
+                    '401': { description: 'Authentication required.' },
+                    '403': {
+                        description:
+                            'Active membership or organization update permission is required.',
+                    },
                 },
             },
             delete: {
-                summary: 'Delete an organization',
+                summary:
+                    'Delete an organization with active membership and delete permission',
                 responses: {
                     '200': { description: 'Organization deleted.' },
-                    '404': { description: 'Organization not found.' },
+                    '400': { description: 'Invalid organization ID.' },
+                    '401': { description: 'Authentication required.' },
+                    '403': {
+                        description:
+                            'Active membership or organization delete permission is required.',
+                    },
                     '409': {
-                        description: 'Organization has related departments.',
+                        description:
+                            'Organization has related records that prevent deletion.',
                     },
                 },
             },

@@ -21,10 +21,10 @@ export class OrganizationService {
         private readonly organizationRepository: OrganizationRepository,
     ) {}
 
-    async getAll(pagination: PaginationParams) {
+    async getAll(userId: string, pagination: PaginationParams) {
         const [items, total] = await Promise.all([
-            this.organizationRepository.findAll(pagination),
-            this.organizationRepository.count(),
+            this.organizationRepository.findAllForUser(userId, pagination),
+            this.organizationRepository.countForUser(userId),
         ]);
 
         return {
@@ -37,8 +37,9 @@ export class OrganizationService {
         };
     }
 
-    async getById(id: string) {
-        const organization = await this.organizationRepository.findById(id);
+    async getById(organizationId: string) {
+        const organization =
+            await this.organizationRepository.findById(organizationId);
 
         if (!organization) {
             throw new AppError(404, 'Organization not found.');
@@ -47,16 +48,12 @@ export class OrganizationService {
         return organization;
     }
 
-    async create(data: CreateOrganizationDto) {
-        const existingOrganization =
-            await this.organizationRepository.findBySlug(data.slug);
-
-        if (existingOrganization) {
-            throw new AppError(409, 'Organization slug already exists.');
-        }
-
+    async create(data: CreateOrganizationDto, userId: string) {
         try {
-            return await this.organizationRepository.create(data);
+            return await this.organizationRepository.createForOwner(
+                data,
+                userId,
+            );
         } catch (error) {
             if (hasPrismaErrorCode(error, 'P2002')) {
                 throw new AppError(409, 'Organization slug already exists.');
@@ -66,11 +63,14 @@ export class OrganizationService {
         }
     }
 
-    async update(id: string, data: UpdateOrganizationDto) {
-        await this.getById(id);
+    async update(organizationId: string, data: UpdateOrganizationDto) {
+        await this.getById(organizationId);
 
         try {
-            return await this.organizationRepository.update(id, data);
+            return await this.organizationRepository.update(
+                organizationId,
+                data,
+            );
         } catch (error) {
             if (hasPrismaErrorCode(error, 'P2025')) {
                 throw new AppError(404, 'Organization not found.');
@@ -80,16 +80,16 @@ export class OrganizationService {
         }
     }
 
-    async delete(id: string) {
-        await this.getById(id);
+    async delete(organizationId: string) {
+        await this.getById(organizationId);
 
         try {
-            await this.organizationRepository.delete(id);
+            await this.organizationRepository.delete(organizationId);
         } catch (error) {
             if (hasPrismaErrorCode(error, 'P2003')) {
                 throw new AppError(
                     409,
-                    'Cannot delete an organization with existing departments.',
+                    'Cannot delete an organization with existing records.',
                 );
             }
 

@@ -1,9 +1,9 @@
 import type { Request, Response, NextFunction } from 'express';
 import { OrganizationService } from './organization.service.js';
 import { OrganizationRepository } from './organization.repository.js';
-import { getRouteParam } from '../../common/utils/route-params.js';
 import { successResponse } from '../../common/utils/api-response.js';
 import { parsePagination } from '../../common/utils/pagination.js';
+import { AppError } from '../../common/errors/app-error.js';
 
 const organizationService = new OrganizationService(
     new OrganizationRepository(),
@@ -16,7 +16,12 @@ export class OrganizationController {
         next: NextFunction,
     ): Promise<void> {
         try {
+            if (!req.auth) {
+                throw new AppError(401, 'Authentication is required.');
+            }
+
             const organizations = await organizationService.getAll(
+                req.auth.userId,
                 parsePagination(req.query),
             );
 
@@ -37,8 +42,12 @@ export class OrganizationController {
         next: NextFunction,
     ): Promise<void> {
         try {
+            if (!req.organization) {
+                throw new AppError(500, 'Organization context is unavailable.');
+            }
+
             const organization = await organizationService.getById(
-                getRouteParam(req, 'id'),
+                req.organization.id,
             );
 
             res.status(200).json(
@@ -58,7 +67,14 @@ export class OrganizationController {
         next: NextFunction,
     ): Promise<void> {
         try {
-            const organization = await organizationService.create(req.body);
+            if (!req.auth) {
+                throw new AppError(401, 'Authentication is required.');
+            }
+
+            const organization = await organizationService.create(
+                req.body,
+                req.auth.userId,
+            );
 
             res.status(201).json(
                 successResponse(
@@ -77,8 +93,12 @@ export class OrganizationController {
         next: NextFunction,
     ): Promise<void> {
         try {
+            if (!req.organization) {
+                throw new AppError(500, 'Organization context is unavailable.');
+            }
+
             const organization = await organizationService.update(
-                getRouteParam(req, 'id'),
+                req.organization.id,
                 req.body,
             );
 
@@ -99,7 +119,11 @@ export class OrganizationController {
         next: NextFunction,
     ): Promise<void> {
         try {
-            await organizationService.delete(getRouteParam(req, 'id'));
+            if (!req.organization) {
+                throw new AppError(500, 'Organization context is unavailable.');
+            }
+
+            await organizationService.delete(req.organization.id);
 
             res.status(200).json(
                 successResponse('Organization deleted successfully.', null),

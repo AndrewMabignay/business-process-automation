@@ -8,7 +8,8 @@
         "build": "tsc",
         "start": "node dist/src/server.js",
         "type-check": "tsc --noEmit",
-        "test:auth": "tsx --test tests/auth.integration.test.ts"
+        "test:auth": "tsx --test tests/auth.integration.test.ts",
+        "test:authorization": "tsx --test tests/authorization.integration.test.ts"
     },
     "keywords": [],
     "author": "",

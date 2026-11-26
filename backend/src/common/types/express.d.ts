@@ -5,6 +5,10 @@ declare global {
                 userId: string;
                 sessionId: string;
             };
+            organization?: {
+                id: string;
+                membershipId: string;
+            };
         }
     }
 }
