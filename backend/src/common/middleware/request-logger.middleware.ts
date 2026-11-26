@@ -6,6 +6,7 @@ export function requestLogger(
     next: NextFunction,
 ): void {
     const startedAt = Date.now();
+    const path = req.path;
 
     res.on('finish', () => {
         console.info(
@@ -13,7 +14,7 @@ export function requestLogger(
                 level: 'info',
                 message: 'HTTP request completed',
                 method: req.method,
-                path: req.path,
+                path,
                 statusCode: res.statusCode,
                 durationMs: Date.now() - startedAt,
             }),

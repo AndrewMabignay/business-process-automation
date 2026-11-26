@@ -30,6 +30,103 @@ export const openApiSpec = {
     },
     servers: [{ url: '/api' }],
     paths: {
+        '/auth/register': {
+            post: {
+                summary: 'Register a standalone user account',
+                requestBody: {
+                    required: true,
+                    content: {
+                        'application/json': {
+                            schema: {
+                                type: 'object',
+                                additionalProperties: false,
+                                required: ['email', 'password'],
+                                properties: {
+                                    email: { type: 'string', format: 'email' },
+                                    password: {
+                                        type: 'string',
+                                        minLength: 12,
+                                        maxLength: 128,
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+                responses: {
+                    '201': { description: 'Account registered.' },
+                    '400': { description: 'Invalid registration data.' },
+                    '409': { description: 'Email is already registered.' },
+                },
+            },
+        },
+        '/auth/login': {
+            post: {
+                summary: 'Authenticate and issue access/refresh tokens',
+                requestBody: {
+                    required: true,
+                    content: {
+                        'application/json': {
+                            schema: {
+                                type: 'object',
+                                additionalProperties: false,
+                                required: ['email', 'password'],
+                                properties: {
+                                    email: { type: 'string', format: 'email' },
+                                    password: {
+                                        type: 'string',
+                                        maxLength: 128,
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+                responses: {
+                    '200': {
+                        description:
+                            'Access token returned; refresh token set as an HttpOnly cookie.',
+                    },
+                    '401': { description: 'Invalid email or password.' },
+                },
+            },
+        },
+        '/auth/refresh': {
+            post: {
+                summary:
+                    'Rotate the refresh token and issue a new access token',
+                security: [{ refreshCookie: [] }],
+                responses: {
+                    '200': {
+                        description:
+                            'New access token returned and refresh cookie rotated.',
+                    },
+                    '401': {
+                        description:
+                            'Refresh token invalid, expired, or reused.',
+                    },
+                },
+            },
+        },
+        '/auth/logout': {
+            post: {
+                summary: 'Revoke the current refresh-token session',
+                security: [{ refreshCookie: [] }],
+                responses: {
+                    '200': { description: 'Session revoked.' },
+                },
+            },
+        },
+        '/auth/me': {
+            get: {
+                summary: 'Get the authenticated user',
+                security: [{ bearerAuth: [] }],
+                responses: {
+                    '200': { description: 'Authenticated user.' },
+                    '401': { description: 'Authentication required.' },
+                },
+            },
+        },
         '/health': {
             get: {
                 summary: 'Check API and database health',
@@ -215,6 +312,18 @@ export const openApiSpec = {
         },
     },
     components: {
+        securitySchemes: {
+            bearerAuth: {
+                type: 'http',
+                scheme: 'bearer',
+                bearerFormat: 'JWT',
+            },
+            refreshCookie: {
+                type: 'apiKey',
+                in: 'cookie',
+                name: 'bpas_refresh_token',
+            },
+        },
         schemas: {
             Organization: organization,
             ErrorResponse: errorResponse,
